@@ -57,6 +57,10 @@ public class ComunidadService {
         Comunidad comunidad = comunidadRepository.findById(idComunidad)
                 .orElseThrow(() -> new RuntimeException("Comunidad no encontrada"));
 
+        if (comunidad.getUsuarios().contains(usuario)) {
+            throw new RuntimeException("Ya eres miembro de esta comunidad.");
+        }
+
         List<Usuario> usuariosDeLaComunidad = new ArrayList<>(comunidad.getUsuarios());
         usuariosDeLaComunidad.add(usuario);
         comunidad.setUsuarios(usuariosDeLaComunidad);
