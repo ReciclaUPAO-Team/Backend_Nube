@@ -53,6 +53,11 @@ public class RecompensaController {
             throw new IllegalArgumentException("Formato de imagen no válido.", e);
         }
 
+        Path directoryPath = Paths.get(uploadDirectory);
+        if (!Files.exists(directoryPath)) {
+            Files.createDirectories(directoryPath);
+        }
+
         String originalFilename = UUID.randomUUID().toString();
         Path fileNameAndPath = Paths.get(uploadDirectory, originalFilename);
         Files.write(fileNameAndPath, imageBytes);
