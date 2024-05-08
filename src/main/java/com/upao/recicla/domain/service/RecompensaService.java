@@ -2,11 +2,11 @@ package com.upao.recicla.domain.service;
 
 import com.upao.recicla.domain.entity.Recompensa;
 import com.upao.recicla.infra.repository.RecompensaRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -32,25 +32,33 @@ public class RecompensaService {
         return recompensaRepository.save(recompensa);
     }
 
-    @Scheduled(cron = "0 0 0 * * ?")
+    @Scheduled(cron = "0 0 0 * * ?") // Se ejecuta todos los días a las 00:00 horas (medianoche) para eliminar recompensas expiradas
+    @Transactional
     public void eliminarRecompensasExpiradas() {
         List<Recompensa> recompensasExpiradas = recompensaRepository.findAll().stream()
-                .filter(recompensa -> recompensa.getFechaCierre().isBefore(LocalDateTime.now()))
+                .filter(recompensa -> recompensa.getFechaCierre().isBefore(LocalDateTime.now()) && recompensa.isActivo())
                 .collect(Collectors.toList());
 
         if (!recompensasExpiradas.isEmpty()) {
-            recompensaRepository.deleteAll(recompensasExpiradas);
+            for (Recompensa recompensa : recompensasExpiradas) {
+                recompensa.setActivo(false); // Desactivar recompensa
+            }
+            recompensaRepository.saveAll(recompensasExpiradas); // Guardar cambios
         }
     }
 
     public Page<Recompensa> getAllRecompensas(Pageable pageable) {
-        return recompensaRepository.findAll(pageable);
+        return recompensaRepository.findAllByActivo(true, pageable);
     }
+
     public Recompensa getReferenceById(Long id) {
         return recompensaRepository.getReferenceById(id);
     }
 
     public void deleteRecompensaById(Long id) {
-        recompensaRepository.deleteById(id);
+        Recompensa recompensa = recompensaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Recompensa no encontrada"));
+        recompensa.setActivo(false);
+        recompensaRepository.save(recompensa);
     }
 }

@@ -1,14 +1,10 @@
 package com.upao.recicla.domain.entity;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.upao.recicla.domain.dto.actividadDto.DatosActualizarActividad;
 import com.upao.recicla.domain.dto.actividadDto.DatosRegistroActividad;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Table(name = "actividades")
@@ -26,8 +22,8 @@ public class Actividad {
     private String nombre;
     @Column(name = "cantidad_reciclada", nullable = false)
     private Double cantidad;
-    @Column(nullable = false, length = 255)
     @Lob
+    @Column(nullable = false, columnDefinition = "MEDIUMTEXT")
     private String imagen;
     @Column(columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", insertable = false)
     private LocalDateTime fecha;

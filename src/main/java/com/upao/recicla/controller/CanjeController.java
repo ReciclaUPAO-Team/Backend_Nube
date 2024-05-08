@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
+
 @RestController
 @RequestMapping("/canje")
 @RequiredArgsConstructor
@@ -21,7 +23,7 @@ public class CanjeController {
     public ResponseEntity<?> canjearRecompensa(@RequestParam("nombreRecompensa") String nombreRecompensa) {
         try {
             canjeService.canjearPuntos(nombreRecompensa);
-            return ResponseEntity.ok().body("Recompensa canjeada con éxito");
+            return ResponseEntity.ok().body(Collections.singletonMap("message", "Recompensa canjeada correctamente"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

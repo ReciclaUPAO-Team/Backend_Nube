@@ -27,8 +27,10 @@ public class Recompensa {
     private LocalDateTime fechaInicio;
     @Column(name = "fecha_cierre")
     private LocalDateTime fechaCierre;
-    @Column(name = "imagen_path", nullable = false, columnDefinition = "LONGTEXT")
+    @Lob
+    @Column(name = "imagen_path", nullable = false, columnDefinition = "MEDIUMTEXT")
     private String imagenPath;
+    private boolean activo = true;
 
     public Recompensa(DatosRegistroRecompensa datos){
         this.titulo = datos.titulo();

@@ -4,6 +4,7 @@ import com.upao.recicla.domain.entity.Canje;
 import com.upao.recicla.domain.entity.Recompensa;
 import com.upao.recicla.domain.entity.Usuario;
 import com.upao.recicla.infra.email.EmailService;
+import com.upao.recicla.infra.exception.PuntosInsuficientesException;
 import com.upao.recicla.infra.repository.CanjeRepository;
 import com.upao.recicla.infra.repository.RecompensaRepository;
 import com.upao.recicla.infra.repository.UsuarioRepository;
@@ -37,28 +38,31 @@ public class CanjeService {
     }
 
     @Transactional
-    public void canjearPuntos(String nombreRecompensa) throws Exception {
-        String nombreUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
-        Usuario usuario = usuarioRepository.findByUsername(nombreUsuario).orElseThrow();
-        Recompensa recompensa = recompensaRepository.findByTitulo(nombreRecompensa).orElseThrow();
+    public void canjearPuntos(String nombreRecompensa) {
+        try {
+            String nombreUsuario = SecurityContextHolder.getContext().getAuthentication().getName();
+            Usuario usuario = usuarioRepository.findByUsername(nombreUsuario).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            Recompensa recompensa = recompensaRepository.findByTitulo(nombreRecompensa).orElseThrow(() -> new RuntimeException("Recompensa no encontrada"));
 
-        if (usuario.getPuntos() < recompensa.getValor()) {
-            throw new Exception("No tienes suficientes puntos para canjear esta recompensa");
+            if (usuario.getPuntos() < recompensa.getValor()) {
+                throw new PuntosInsuficientesException("No tienes suficientes puntos para canjear esta recompensa");
+            }
+
+            usuario.setPuntos(usuario.getPuntos() - recompensa.getValor());
+            usuario.actualizarNivel();
+            usuarioRepository.save(usuario);
+
+            Canje canje = new Canje();
+            canje.setFecha(LocalDate.now());
+            canje.setPuntosCanjear(recompensa.getValor());
+            canje.setUsuario(usuario);
+            canje.setRecompensa(recompensa);
+
+            canjeRepository.save(canje);
+
+            emailService.enviarCorreoConPDF(usuario.getCorreo(), canje);
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
         }
-
-        usuario.setPuntos(usuario.getPuntos() - recompensa.getValor());
-        usuario.actualizarNivel();
-        usuarioRepository.save(usuario);
-
-        Canje canje = new Canje();
-        canje.setFecha(LocalDate.now());
-        canje.setPuntosCanjear(recompensa.getValor());
-        canje.setUsuario(usuario);
-        canje.setRecompensa(recompensa);
-
-        canjeRepository.save(canje);
-
-        emailService.enviarCorreoConPDF(usuario.getCorreo(), canje);
     }
-
 }

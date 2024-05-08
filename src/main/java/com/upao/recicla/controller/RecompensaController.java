@@ -4,7 +4,6 @@ import com.upao.recicla.domain.dto.recompensaDto.*;
 import com.upao.recicla.domain.entity.Recompensa;
 import com.upao.recicla.domain.service.RecompensaService;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -14,14 +13,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.apache.tomcat.util.codec.binary.Base64;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Base64;
-import java.util.UUID;
+import java.util.Arrays;
+import java.util.List;
 
 @RestController
 @RequestMapping("/recompensa")
@@ -31,47 +29,50 @@ public class RecompensaController {
     @Autowired
     private final RecompensaService recompensaService;
 
-    private final String uploadDirectory =
-            System.getProperty("user.dir") + "/src/main/resources/static/recompensas";
+    private static final List<String> FORMATOS_PERMITIDOS = Arrays.asList("image/png", "image/jpeg", "image/jpg");
+    private static final long TAMANO_MAXIMO = 5 * 1024 * 1024; // 5MB
 
     @PreAuthorize("hasAuthority('ROLE_ADMINISTRADOR')")
     @PostMapping("/crear")
     @Transactional
-    public ResponseEntity<?> addRecompensas(@RequestBody @Valid DatosRegistroRecompensa datosRegistroRecompensa,
-                                         UriComponentsBuilder uriBuilder) throws IOException {
+    public ResponseEntity<?> addRecompensas(@RequestParam("titulo") String titulo,
+                                            @RequestParam("descripcion") String descripcion,
+                                            @RequestParam("categoria") String categoria,
+                                            @RequestParam("valor") Double valor,
+                                            @RequestParam("imagenPath") MultipartFile imagen) throws IOException {
 
-        String base64Image = datosRegistroRecompensa.imagenPath();
+        String imagenPath = guardarImagen(imagen);
 
-        if (base64Image == null || base64Image.trim().isEmpty()) {
-            throw new IllegalArgumentException("La imagen no puede ser nula o vacía.");
-        }
-
-        byte[] imageBytes;
-        try {
-            imageBytes = Base64.getDecoder().decode(base64Image);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Formato de imagen no válido.", e);
-        }
-
-        Path directoryPath = Paths.get(uploadDirectory);
-        if (!Files.exists(directoryPath)) {
-            Files.createDirectories(directoryPath);
-        }
-
-        String originalFilename = UUID.randomUUID().toString();
-        Path fileNameAndPath = Paths.get(uploadDirectory, originalFilename);
-        Files.write(fileNameAndPath, imageBytes);
+        DatosRegistroRecompensa datosRegistroRecompensa = new DatosRegistroRecompensa(titulo, descripcion, categoria, valor, imagenPath);
 
         Recompensa nuevaRecompensa = new Recompensa();
         nuevaRecompensa.setTitulo(datosRegistroRecompensa.titulo());
         nuevaRecompensa.setDescripcion(datosRegistroRecompensa.descripcion());
         nuevaRecompensa.setCategoria(datosRegistroRecompensa.categoria());
         nuevaRecompensa.setValor(datosRegistroRecompensa.valor());
-        nuevaRecompensa.setImagenPath(base64Image);
-        recompensaService.addRecompensa(nuevaRecompensa);
+        if (imagen != null) {
+            nuevaRecompensa.setImagenPath(guardarImagen(imagen));
+        }
 
-        var uri = uriBuilder.path("/recompensa/{id}").buildAndExpand(nuevaRecompensa.getId()).toUri();
-        return ResponseEntity.created(uri).body(new DatosDetallesRecompensa(nuevaRecompensa));
+        recompensaService.addRecompensa(nuevaRecompensa);
+        UriComponentsBuilder builder = UriComponentsBuilder.newInstance();
+        builder.path("/recompensa/{id}").buildAndExpand(nuevaRecompensa.getId()).toUri();
+        return ResponseEntity.created(builder.build().toUri()).body(new DatosDetallesRecompensa(nuevaRecompensa));
+    }
+
+    private String guardarImagen(MultipartFile imagen) throws IOException {
+        if (!imagen.isEmpty()) {
+            if (!FORMATOS_PERMITIDOS.contains(imagen.getContentType())) {
+                throw new IllegalArgumentException("Formato de archivo no permitido.");
+            }
+            if (imagen.getSize() > TAMANO_MAXIMO) {
+                throw new IllegalArgumentException("El archivo excede el tamaño máximo permitido.");
+            }
+
+            byte[] bytes = imagen.getBytes();
+            return Base64.encodeBase64String(bytes);
+        }
+        return null;
     }
 
     @GetMapping("/catalogo")

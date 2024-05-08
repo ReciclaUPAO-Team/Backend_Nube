@@ -5,14 +5,13 @@ import com.upao.recicla.domain.dto.actividadDto.DatosDetallesActividad;
 import com.upao.recicla.domain.dto.actividadDto.DatosListadoActividad;
 import com.upao.recicla.domain.dto.actividadDto.DatosRespuestaActividad;
 import com.upao.recicla.domain.entity.Actividad;
-import com.upao.recicla.domain.entity.Residuo;
 import com.upao.recicla.domain.entity.Usuario;
 import com.upao.recicla.domain.service.ActividadService;
-import com.upao.recicla.infra.repository.ResiduoRepository;
 import com.upao.recicla.infra.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,10 +28,6 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,8 +43,6 @@ public class ActividadController {
     private static final List<String> FORMATOS_PERMITIDOS = Arrays.asList("image/png", "image/jpeg", "image/jpg");
     private static final long TAMANO_MAXIMO = 5 * 1024 * 1024; // 5MB
 
-    public static String UPLOAD_DIRECTORY =
-            System.getProperty("user.dir") + "/src/main/resources/static/actividades";
 
     private final UsuarioRepository usuarioRepository;
 
@@ -118,14 +111,9 @@ public class ActividadController {
             if (imagen.getSize() > TAMANO_MAXIMO) {
                 throw new IllegalArgumentException("El archivo excede el tamaño máximo permitido.");
             }
-            Path uploadPath = Paths.get(UPLOAD_DIRECTORY);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-            String imagenNombre = UUID.randomUUID().toString() + "-" + imagen.getOriginalFilename();
-            Path path = uploadPath.resolve(imagenNombre).normalize().toAbsolutePath();
-            Files.copy(imagen.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
-            return imagenNombre;
+
+            byte[] bytes = imagen.getBytes();
+            return Base64.encodeBase64String(bytes);
         }
         return null;
     }

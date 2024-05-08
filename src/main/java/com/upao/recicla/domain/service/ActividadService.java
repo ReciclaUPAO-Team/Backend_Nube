@@ -51,6 +51,7 @@ public class ActividadService {
     public Actividad getReferenceById(Long id) {
         return actividadRepository.getReferenceById(id);
     }
+
     public ResponseEntity<String> addActividad(Actividad actividad, String nombreResiduo) {
         if (actividad.getCantidad() <= 0) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -99,14 +100,14 @@ public class ActividadService {
     }
 
     private String createQRCodeText(Actividad actividad) {
-        // Crear un texto para el código QR
+        // texto para el código QR
         return String.format(
-                "Actividad: %s\nCreador: %s\nCantidad: %.2f\nFecha: %s\nResiduo: %s\nPuntos Usados: %.2f\nPuntos Ganados: %.2f",
+                "Actividad: %s\nCreador: %s\nFecha: %s\nResiduo: %s\nCantidad Reciclada: %.2f kg\nPuntos Usados: %.2f\nPuntos Ganados: %.2f",
                 actividad.getNombre(),
                 actividad.getUsuario().getNombre(),
-                actividad.getCantidad(),
                 actividad.getFecha().toString(),
                 actividad.getResiduo().getNombre(),
+                actividad.getCantidad(),
                 actividad.getResiduo().getPuntos() * actividad.getCantidad(), // Puntos usados
                 actividad.getCantidad() * actividad.getResiduo().getPuntos() // Puntos ganados
         );

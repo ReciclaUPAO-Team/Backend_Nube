@@ -11,11 +11,14 @@
 	<groupId>com.upao</groupId>
 	<artifactId>recicla</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
 	<name>recicla</name>
 	<description>Proyecto Demo de Recicla UPAO</description>
+
 	<properties>
 		<java.version>17</java.version>
 	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
