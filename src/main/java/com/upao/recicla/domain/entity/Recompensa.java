@@ -40,13 +40,16 @@ public class Recompensa {
     }
 
     public void actualizarRecompensa(DatosActualizarRecompensa datosActualizarRecompensa){
-        if (datosActualizarRecompensa.titulo() != null){
+        if (datosActualizarRecompensa.titulo() != null) {
             this.titulo = datosActualizarRecompensa.titulo();
         }
-        if(datosActualizarRecompensa.categoria() != null){
+        if (datosActualizarRecompensa.descripcion() != null) {
+            this.descripcion = datosActualizarRecompensa.descripcion();
+        }
+        if (datosActualizarRecompensa.categoria() != null) {
             this.categoria = datosActualizarRecompensa.categoria();
         }
-        if(datosActualizarRecompensa.valor() != null){
+        if (datosActualizarRecompensa.valor() != null) {
             this.valor = datosActualizarRecompensa.valor();
         }
     }
