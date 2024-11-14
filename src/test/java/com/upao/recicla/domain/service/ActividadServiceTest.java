@@ -108,6 +108,56 @@ class ActividadServiceTest {
     }
 
     @Test
+    void updateActividadTest() {
+        Long actividadId = 1L;
+        Actividad actividadExistente = new Actividad();
+        actividadExistente.setId(actividadId);
+        actividadExistente.setNombre("Reciclaje de plástico");
+
+        Actividad actividadActualizada = new Actividad();
+        actividadActualizada.setNombre("Reciclaje de vidrio");
+
+        when(actividadRepository.findById(actividadId)).thenReturn(Optional.of(actividadExistente));
+
+        // Ejecutamos el método de actualización
+        actividadService.updateActividad(actividadActualizada, actividadId);
+
+        // Verificamos que la actividad se actualizó correctamente
+        assertEquals("Reciclaje de vidrio", actividadExistente.getNombre());
+        verify(actividadRepository).save(actividadExistente);
+    }
+
+    @Test
+    void generateActividadQRCodeTest() throws Exception {
+        Long actividadId = 1L;
+        Actividad actividad = new Actividad();
+        actividad.setId(actividadId);
+        actividad.setNombre("Reciclaje de papel");
+        actividad.setCantidad(2.5);
+
+        // Asegurarse de que la fecha no sea nula
+        actividad.setFecha(LocalDateTime.now());
+
+        Usuario usuario = new Usuario();
+        usuario.setNombre("Usuario Test");
+        actividad.setUsuario(usuario);
+
+        Residuo residuo = new Residuo();
+        residuo.setNombre("Papel");
+        residuo.setPuntos(10.0);
+        actividad.setResiduo(residuo);
+
+        when(actividadRepository.getReferenceById(actividadId)).thenReturn(actividad);
+
+        // Llamada al método de generación del código QR
+        byte[] qrCodeImage = actividadService.generateActividadQRCode(actividadId);
+
+        // Verificación de que el código QR fue generado correctamente
+        assertNotNull(qrCodeImage);
+        verify(actividadRepository).getReferenceById(actividadId);
+    }
+
+    @Test
     void getActividadByIdTest() {
         Long id = 1L;
         Optional<Actividad> expectedActividad = Optional.of(new Actividad());

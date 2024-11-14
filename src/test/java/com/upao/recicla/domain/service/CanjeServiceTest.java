@@ -1,5 +1,6 @@
 package com.upao.recicla.domain.service;
 
+import com.upao.recicla.domain.entity.Canje;
 import com.upao.recicla.domain.entity.Recompensa;
 import com.upao.recicla.domain.entity.Usuario;
 import com.upao.recicla.infra.repository.RecompensaRepository;
@@ -13,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,6 +42,8 @@ class CanjeServiceTest {
         when(authentication.getName()).thenReturn("nombreDeUsuario");
     }
 
+
+
     @Test
     void canjearPuntosFallaPorPuntosInsuficientes() {
         Usuario usuarioMock = new Usuario();
@@ -60,4 +64,5 @@ class CanjeServiceTest {
 
         assertTrue(exception.getMessage().contains("No tienes suficientes puntos para canjear esta recompensa"));
     }
+
 }
