@@ -61,6 +61,30 @@ class RecompensaServiceTest {
     }
 
     @Test
+    public void whenAddRecompensaWithNegativeValue_thenThrowException() {
+        // Configuración
+        Recompensa recompensa = new Recompensa();
+        recompensa.setValor(-10.0);
+
+        // Ejecución y verificación
+        assertThrows(IllegalArgumentException.class, () -> recompensaService.addRecompensa(recompensa));
+    }
+
+    @Test
+    void getReferenceById_NotFound() {
+        // Configuración
+        Long recompensaId = 1L;
+        when(recompensaRepository.getReferenceById(recompensaId)).thenThrow(new IllegalArgumentException("Recompensa no encontrada"));
+
+        // Ejecución y verificación
+        assertThrows(IllegalArgumentException.class, () -> recompensaService.getReferenceById(recompensaId));
+
+        // Verificación de que el método fue llamado
+        verify(recompensaRepository).getReferenceById(recompensaId);
+    }
+
+
+    @Test
     void getAllRecompensas() {
         // Creamos un mock de la clase RecompensaRepository
         RecompensaRepository recompensaRepositoryMock = Mockito.mock(RecompensaRepository.class);
@@ -69,16 +93,18 @@ class RecompensaServiceTest {
         RecompensaService recompensaService = new RecompensaService(recompensaRepositoryMock);
 
         // Simulamos la respuesta de la base de datos
-        List<Recompensa> recompensas = Arrays.asList(
-                new Recompensa(),
-                new Recompensa()
-        );
+        Recompensa recompensaActiva = new Recompensa();
+        recompensaActiva.setActivo(true);
+        List<Recompensa> recompensas = Arrays.asList(recompensaActiva);
+
         Page<Recompensa> recompensasPage = new PageImpl<>(recompensas);
 
-        Mockito.when(recompensaRepositoryMock.findAll(any(Pageable.class))).thenReturn(recompensasPage);
+        // Mockeamos el método para devolver solo recompensas activas
+        Mockito.when(recompensaRepositoryMock.findAllByActivo(eq(true), any(Pageable.class))).thenReturn(recompensasPage);
 
-        // Obtenemos todas las recompensas
+        // Obtenemos todas las recompensas activas
         Page<Recompensa> recompensasObtenidas = recompensaService.getAllRecompensas(PageRequest.of(0, 10));
+
         assertNotNull(recompensasObtenidas);
 
         // Extraemos la lista de recompensas del objeto Page
@@ -86,6 +112,9 @@ class RecompensaServiceTest {
 
         // Assert que las recompensas obtenidas sean las mismas que las simuladas
         assertEquals(recompensas, recompensasObtenidasList);
+
+        // Verificamos que el método fue llamado con el parámetro `true` para recompensas activas
+        verify(recompensaRepositoryMock).findAllByActivo(eq(true), any(Pageable.class));
     }
 
     @Test
@@ -123,14 +152,23 @@ class RecompensaServiceTest {
 
         // Simulamos la respuesta del repositorio
         Long recompensaId = 1L;
-        Mockito.doNothing().when(recompensaRepositoryMock).deleteById(recompensaId);
+        Recompensa recompensa = new Recompensa();
+        recompensa.setId(recompensaId);
+        recompensa.setActivo(true); // Inicialmente activa
 
-        // Eliminamos la recompensa por su ID
+        // Simulamos la búsqueda de la recompensa por ID
+        Mockito.when(recompensaRepositoryMock.findById(recompensaId)).thenReturn(java.util.Optional.of(recompensa));
+
+        // Eliminamos la recompensa por su ID (marcándola como inactiva)
         recompensaService.deleteRecompensaById(recompensaId);
 
-        // Assert que el repositorio haya sido llamado para eliminar la recompensa por su ID
-        Mockito.verify(recompensaRepositoryMock).deleteById(recompensaId);
+        // Verificamos que se haya marcado como inactiva
+        assertFalse(recompensa.isActivo());
+
+        // Verificamos que el método save se llame para guardar el cambio de estado
+        Mockito.verify(recompensaRepositoryMock).save(recompensa);
     }
+
 
     @Test
     public void whenAddInvalidRecompensa_thenThrowException() {
@@ -143,20 +181,27 @@ class RecompensaServiceTest {
     }
 
     @Test
-    public void whenEliminarRecompensasExpiradas_thenCallDelete() {
+    public void whenEliminarRecompensasExpiradas_thenMarkAsInactive() {
         // Configuración
         Recompensa recompensaExpirada = new Recompensa();
         recompensaExpirada.setFechaCierre(LocalDateTime.now().minusDays(1)); // Fecha en el pasado
+        recompensaExpirada.setActivo(true); // Inicialmente activa
         List<Recompensa> recompensasExpiradas = Arrays.asList(recompensaExpirada);
 
+        // Mockeamos el método findAll para devolver una lista de recompensas expiradas
         when(recompensaRepository.findAll()).thenReturn(recompensasExpiradas);
 
         // Ejecución
         recompensaService.eliminarRecompensasExpiradas();
 
-        // Verificación
-        verify(recompensaRepository, times(1)).deleteAll(recompensasExpiradas);
+        // Verificación de que las recompensas expiradas se han marcado como inactivas
+        assertFalse(recompensaExpirada.isActivo());
+
+        // Verificamos que se llamó al método saveAll con las recompensas modificadas
+        verify(recompensaRepository, times(1)).saveAll(recompensasExpiradas);
     }
+
+
 
 
 
