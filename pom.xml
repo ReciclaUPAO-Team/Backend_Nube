@@ -17,6 +17,9 @@
 
 	<properties>
 		<java.version>17</java.version>
+		<sonar.host.url>http://localhost:9000</sonar.host.url> <!-- Cambia por tu URL de SonarQube -->
+		<sonar.token>sqp_42208623d53b49b5522377c7d20f0e051a29498d</sonar.token>
+		<sonar.projectKey>recicla_upao</sonar.projectKey>
 	</properties>
 
 	<dependencies>
@@ -129,6 +132,12 @@
 						</exclude>
 					</excludes>
 				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.sonarsource.scanner.maven</groupId>
+				<artifactId>sonar-maven-plugin</artifactId>
+				<version>4.0.0.4121</version>
 			</plugin>
 		</plugins>
 	</build>
